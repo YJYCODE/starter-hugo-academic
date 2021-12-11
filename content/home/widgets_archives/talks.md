@@ -1,11 +1,18 @@
 ---
+
+# widget = "pages"  # See https://wowchemy.com/docs/page-builder/
+# headless = true  # This file represents a page section.
+# active = true  # Activate this widget? true/false
+# weight = 15  # Order that this section will appear.
+
+
 # An instance of the Pages widget.
 # Documentation: https://wowchemy.com/docs/page-builder/
 widget: pages
 
 # This file represents a page section.
 headless: true
-
+active: false
 # Order that this section appears on the page.
 weight: 70
 

@@ -72,4 +72,4 @@ highlight_name: true
  
 Jiayue Yang is a first year student of Master in Biostatistics at the Case Western Reserve Universtiy. His research interests include probability theories, ecDNA, and programmable matter. In his spare time, he is a all-time fan of soccer and supporter for Bayern Soccer Club.
 
-{{< icon name="download" pack="fas" >}} Download my {{< staticref "uploads/demo_resume.pdf" "newtab" >}}resumé{{< /staticref >}}.
+<!-- {{< icon name="download" pack="fas" >}} Download my {{< staticref "uploads/demo_resume.pdf" "newtab" >}}resumé{{< /staticref >}}. -->
