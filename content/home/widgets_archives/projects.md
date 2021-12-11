@@ -27,8 +27,8 @@ content:
   filter_button:
   - name: All
     tag: '*'
-  - name: Gene with Big Data
-    tag: Big Data, Gene
+  - name: Deep Learning
+    tag: Deep Learning
   - name: Other
     tag: Demo
 
