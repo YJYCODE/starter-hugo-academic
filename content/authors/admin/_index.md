@@ -1,6 +1,6 @@
 ---
 # Display name
-title: Jiayyue (Jerry) Ynag
+title: Jiayue (Jerry) Yang
 
 # Is this the primary user of the site?
 superuser: true
