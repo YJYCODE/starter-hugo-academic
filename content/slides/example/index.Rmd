@@ -1,0 +1,881 @@
+---
+title: Analysis of Hypertension using Vitamin C Level as a Key Predictor Along with
+  Four Other Potential Risk Factors
+author: "Scarlett He and Zi Jie (Jay) Wei"
+date: "`r Sys.Date()`"
+output:
+  beamer_presentation: default
+  ioslides_presentation:
+    widescreen: yes
+    smaller: yes
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Setup and Data Ingest
+
+
+
+## Initial Setup and Package Loads 
+
+```{r initial_setup, cache=FALSE, message = FALSE, warning = FALSE}
+library(knitr); library(rmdformats)
+library(janitor); library(magrittr); library(naniar)
+library(broom); library(patchwork)
+library(readxl)
+library(Epi)
+library(GGally)
+library(MASS)
+library(car)
+library(equatiomatic)
+library(mosaic)
+library(Hmisc)
+library(ggpubr)
+library(nhanesA)
+library(tidyverse) 
+## Load Love-boost 
+source("data/Love-boost.R")
+## Global options
+opts_chunk$set(comment=NA)
+opts_knit$set(width=75)
+theme_set(theme_bw())
+```
+
+
+## Loading the Raw Data into R
+
+We will be using the 2017-18 NHANES data for this project. We specifically selected the Demographic Variables and Sample Weights data file, Blood Pressure data file, and the Vitamin C data file. They are the following:
+
+- `DEMO_J`
+- `BPX_J`
+- `WHQ_J`
+- `VIC_J`
+
+We called raw data from the Demographic Variables and Sample Weights data file demo_raw. 
+
+We called raw data from the Blood Pressure data file bp_raw. 
+
+We called raw data from the Weight History data file whq_raw. 
+
+We called raw data from the Vitamin C data file vitc_raw. 
+
+
+## Codes
+
+```{r,message=FALSE,warning=FALSE}
+demo_raw <- nhanes('DEMO_J') %>% tibble()%>% clean_names()
+bp_raw <- nhanes('BPX_J') %>% tibble()%>% clean_names()
+whq_raw <- nhanes('WHQ_J') %>% tibble()%>% clean_names()
+vitc_raw <- nhanes('VIC_J') %>% tibble() %>% clean_names()
+
+```
+
+
+
+
+# Cleaning the Data
+
+## Contents of the Raw Tibbles
+
+- `demo_raw` contains 46 variables and 9254 observations. 
+
+```{r}
+dim(demo_raw)
+```
+- `bp_raw` contains 21 variables and 8704 observations. 
+
+```{r}
+dim(bp_raw)
+```
+- `whq_raw` contains 37 variables and 6161 observations. 
+
+```{r}
+dim(whq_raw)
+```
+
+
+## Contents of the Raw Tibbles (Continued)
+
+- `vitc_raw` contains 4 variables and 7435 observations. 
+
+```{r}
+dim(vitc_raw)
+```
+
+
+
+## Filtering out all variables that will be used
+
+We will be using the following variables: respondent sequence number (SEQN), interview/examination status (RIDSTATR), age in years at screening (RIDAGEYR), country of birth (DMDBORN4), sex (RIAGENDR), first systolic blood pressure reading (BPXSY1), consideration on current weight (WHQ030), attempt to lose weight in the past year (WHQ070), race origin (RIDRETH3), and vitamin C level (LBXVIC). 
+
+We have limited our subjects to people who completed both interviews and examinations and who are considered as middle-aged adults (ages 36-55 years). 
+
+We also ensured that our final dataset had only complete data without any missing values. 
+
+We have called my filtered datasets: `demo1`, `bp1`, `whq1`, and `vitc1`.  
+
+```{r,message=FALSE}
+demo1 <- demo_raw %>% select(seqn,ridstatr,ridageyr,riagendr,ridreth3, dmdborn4) %>%
+  filter(complete.cases(.)) %>% 
+  filter(ridstatr==2) %>% 
+  filter(ridageyr %in% (36:55))
+
+bp1 <- bp_raw %>% select(seqn, bpxsy1)%>% filter(complete.cases(.))
+
+whq1 <-whq_raw %>% select(seqn, whq030,whq070)%>% filter(complete.cases(.))
+
+vitc1 <- vitc_raw %>% select(seqn,lbxvic) %>% filter(complete.cases(.))
+
+```
+
+## Three Merging Steps
+
+1. We first merged the two datasets, `demo1` and `bp1`, by the respondent sequence number and obtained a new tibble, which we called `temp_1`. 
+
+```{r,message=FALSE}
+temp_1 <- left_join(demo1, bp1, by="seqn")
+```
+
+2. We then merged another dataset, `whq1` with the new tibble `temp_1` by the respondent sequence number and obtained the final tibble, which we called `temp_2`.
+
+```{r,message=FALSE}
+temp_2 <- left_join(temp_1, whq1,by="seqn") %>% filter(complete.cases(.))
+```
+
+3. We then merged the last dataset, `vitc1` with the new tibble `temp_2` by the respondent sequence number and obtained the final tibble, which we called `merged_2`.
+
+
+```{r,message=FALSE}
+merged_2 <- left_join(temp_2, vitc1,by="seqn") %>% filter(complete.cases(.))
+```
+
+
+## Final Merged Tibble
+
+- `merged_2` contains 10 variables and 1143 observations. Nine variables are seqn, ridstatr, ridageyr, dmdborn4, riagendr, bpxsy1, ridreth3, whq030, whq070, and lbxvic. 
+
+```{r}
+dim(merged_2)
+```
+
+
+## Checking the Merge
+
+The number of distinct respondent sequence number should match the number of rows. The output of the code below is true so the two values are identical.
+
+```{r}
+identical(merged_2 %$% n_distinct(seqn), 
+          merged_2 %>% nrow())
+```
+
+Since we added new variable, the code here should output false, and it does output false. 
+
+
+```{r}
+identical(names(merged_2), 
+          names(demo1))
+```
+Since both checks are successful, we think our merge was correct. 
+
+
+
+## Checking our Outcome and Key Predictor
+
+Our outcome variable is first systolic blood pressure readings (bpxsy1) and our key predictor variable is vitamin C level in mg/dL (lbxvic). We have no missing values because we only selected complete cases. We have 1142 subjects for analysis. The ranges of our outcome and predictor variables look plausible, so we think it is safe to continue. The only additional thing we have done here is to remove the labeller for each variable by mutating all our variables to numeric variables. We will change some of them back into factors in the later steps.
+
+```{r}
+df_stats(~bpxsy1+lbxvic,data=merged_2)
+merged_2 <- merged_2 %>% mutate_at(vars(riagendr:lbxvic), as.numeric)
+```
+
+
+
+## Checking the Categorical Variables
+
+### `riagendr`: Sex (Male/Female)
+
+```{r}
+merged_2 <- merged_2 %>%
+    mutate(riagendr = fct_recode(factor(riagendr),"Male" = "1", "Female" ="2"))
+merged_2 %>% tabyl(riagendr)
+
+merged_2 <- merged_2 %>% mutate(riagendr =fct_relevel(factor(riagendr),"Female","Male"))
+```
+- We will first convert `riagendr` into a factor. 
+- The order of `riagendr` goes from "Male" to "Female". We want female to be the reference group because male tends to have higher systolic blood pressure based on research. Thus, we will use the `fct_relevel` function to fix this issue. 
+- We have 546 male subjects and 597 female subjects
+
+
+## Checking the Categorical Variables (Continued)
+
+
+### `whq070`: Tried to lose weight in past year? (Attempt to lose weight in the past year? yes/no)
+
+
+```{r}
+merged_2 <- merged_2 %>%
+    mutate(whq070 = fct_recode(factor(whq070), 
+                               "Attempted" = "1", "Not Attempted" = "2"))
+merged_2 %>% tabyl(whq070)
+merged_2 <- merged_2 %>% mutate(whq070 =fct_relevel(factor(whq070),"Not Attempted","Attempted"))
+```
+- We will first convert `whq070` into a factor. We then changed "Yes" to "Attempted" and "No" to "Not Attempted" for a better understanding. 
+- The order of `riagendr` goes from "Attempted" to "Not Attempted." We want to reorder so that "Not Attempted" is the reference group, and the new order should be: ("Not Attempted", "Attempted").
+- The number of subjects for each subgroup is greater than 30. 
+
+
+## Checking the Categorical Variables (Continued)
+
+### `whq030`: How do you consider your weight? (Consideration on current weight. Overweight/underweight/about the right weight)
+
+
+```{r}
+merged_2 <- merged_2 %>% 
+  mutate(whq030 = fct_recode(factor(whq030),
+"Overweight" = "1", "Underweight" = "2", "About the right weight" = "3")) %>% filter(whq030 != "9") %>% 
+  droplevels()
+
+merged_2 %>% tabyl(whq030)
+
+merged_2 <- merged_2 %>% 
+mutate(whq030 =fct_relevel(factor(whq030),"About the right weight", "Underweight", "Overweight"))
+```
+
+
+## Checking the Categorical Variables (Continued)
+
+### `whq030`: How do you consider your weight? (Consideration on current weight. Overweight/underweight/about the right weight)
+
+- We will first convert `whq070` into a factor. We then changed "1" to "Overweight", "2" to "Underweight, and "3" to "About the right weight" for a better understanding/clarification. 
+- We dropped the level where whq030 equals "9" for subjects who did not know about their current weight status. 
+- Instead of (“Overweight”, “Underweight”, “About the right weight”), we want the new order to be: (“About the right weight”, “Underweight”, “Overweight”). Therefore, we used `fct_revel` to fix this. 
+- The number of subjects for each subgroup is greater than 30. 
+
+
+## Checking the Categorical Variables (Continued)
+
+### `ridreth3`: Race/Hispanic origin w/ NH Asian (Mexican American/Other Hispanic/Non-Hispanic White/Non-Hispanic Black/Non-Hispanic Asian/Other Race - Including Multi-Racial)
+
+```{r}
+merged_2 <- merged_2 %>% mutate(ridreth3 = fct_recode(factor(ridreth3), 
+"Mexican American" = "1", "Other Hispanic" = "2", "Non-Hispanic White" = "3",
+"Non-Hispanic Black" = "4", "Non-Hispanic Asian" = "6", "Other Race" = "7"))
+
+merged_2 %>% tabyl(ridreth3)
+
+merged_2 <- merged_2 %>% mutate(ridreth3 =fct_relevel(factor(ridreth3),"Non-Hispanic White"))
+```
+
+## Checking the Categorical Variables (Continued)
+
+### `ridreth3`: Race/Hispanic origin w/ NH Asian (Mexican American/Other Hispanic/Non-Hispanic White/Non-Hispanic Black/Non-Hispanic Asian/Other Race - Including Multi-Racial)
+
+- We will first convert `ridreth3` into a factor. We then changed "1" to "Mexican American", "2" to "Other Hispanic", "3" to "Non-Hispanic White", "4" to "Non-Hispanic Black", "6" to "Non-Hispanic Asian", and "7" to "Other Race" for a better understanding/clarification. 
+-Instead of this current order, we want "Non-Hispanic White" to be the reference group (or on the top) because in most research papers, non-Hispanic white is the reference group. 
+- The number of subjects for each subgroup is greater than 30. 
+
+## Checking the Categorical Variables (Continued)
+
+### What about the subjects?
+
+We checked here to make sure that the numbers of our unique code `seqn` matches the number of rows in the dataset. We have a total of 1142 subjects.
+
+```{r}
+nrow(merged_2)
+n_distinct(merged_2 %>% select(seqn))
+```
+
+We will select only the variables that we will be using for the analysis and call the new tibble `final_2`. We think we can proceed to the next step from here. 
+
+```{r}
+final_2 <- merged_2 %>% 
+  select(seqn,riagendr,ridreth3,bpxsy1,whq030,whq070,lbxvic)
+```
+
+
+
+# Codebook and Data Description
+
+## The Codebook
+
+The 7 variables in the `final_2` tibble as the following:
+
+Variable      | Type  | Description / Levels
+--------- | :---: | --------------------------------------------
+`seqn`        | ID    | The respondent sequence number (Between 93718-102956)
+`bpxsy1`       | Quant | **Outcome variable**; First systolic blood pressure (SBP) reading in mmHg with minimum of 72 and maximum of 216. 
+`lbxvic`       | Quant | **Key predictor**; Vitamin C level in mg/dL with minimum of 0.033 and maximum of 2.760. 
+`riagendr`     | Cat-2 | yes, no: Male or female?
+`whq030`     | Cat-3 | Overweight, Underweight, About the right weight: How do you consider your weight? 
+`whq070`  | Cat-2 | yes, no: Tried to lose weight in past year?
+`ridreth3`  | Cat-6 | Mexican American, Other Hispanic, Non-Hispanic White, Non-Hispanic Black, Non-Hispanic Asian, Other Race - Including Multi-Racial: Race/Hispanic origin w/ NH Asian
+
+
+## Analytic Tibble 
+
+We have proven here that we have a tibble. 
+
+```{r}
+final_2
+is_tibble(final_2)
+```
+
+
+
+## Numerical Data Description
+
+We have no missing values. The orders of our categorical variables are correct. We should be fine to proceed to our research question. 
+
+
+```{r}
+final_2 %>% 
+  select(-seqn) %$%
+  Hmisc::describe(.)
+```
+
+
+
+# Our Research Question 
+
+## Background
+
+For this research, we will be using the National Health and Nutrition Examination Surveys (NHANES) data from 2017 to 2018. According to the CDC website, every year, there are approximately 5,000 individuals of all ages interviewed in their homes and complete the health examination component of the survey. For this analysis, we are specifically interested in studying the effects of hypertension in middle-aged adults (ages 36-55 years; 1142 subjects). We want to explore the risk factors of hypertension to promote better health care guidelines and prevention measures prior to these middle-aged adults turning into older adults (60+). Hypertension (or high blood pressure) is a common disease in older adults. Untreated hypertension can lead to more serious cardiovascular disease and other health conditions. Additionally, we are interested in the effect of using vitamin C levels to predict blood pressure levels. In some past research articles, higher vitamin C level is associated with lower blood pressure. Thus, our research question is as the following:
+
+## Question 
+
+> How effectively can we predict the subjects' first systolic BP readings using their vitamin C levels, and is the quality of prediction meaningfully improved when I adjust for four other predictors (gender, subjects' consideration of their current weight, attempt to lose weight in the past year, and race origin) in the `final_2` data?
+
+
+# Partitioning the Data
+
+## Partitioning
+
+We have created the training sample `training_2` with a randomly selected 70% of the data from `final2` and the test sample `test_2` with the remaining 30% of the data from `final2`. The set.seed we used here is 4312021. 
+
+```{r}
+#We are using set.seed here to make sure we can get the same result later. 
+set.seed(4312021)
+
+training_2 <- final_2 %>% 
+  slice_sample(., prop = .70)
+test_2 <- anti_join(final_2, training_2, by = "seqn")
+```
+
+
+## Partitioning (Continued)
+
+```{r}
+#We are checking the number of rows and columns in final_2
+dim(final_2)
+
+#We are checking the number of rows and columns in training data to make sure we have 70% of final_2 here
+dim(training_2)
+
+#We are checking the number of rows and columns in test data to make sure we have the rest(30%) of final_2 here
+dim(test_2)
+
+```
+The total number of rows based on results above: 799+343=1142, which is same as the total number of rows in final_2. 
+
+
+# Transforming the Outcome
+
+## Visualizing the Outcome Distribution
+```{r, echo=FALSE}
+v1 <- ggplot(training_2, aes(x = "", y = bpxsy1)) +
+  geom_violin(fill = "orange") +
+  geom_boxplot(width = 0.25, outlier.size = 2, fill ="yellow")+
+  stat_summary(fun = "mean", geom = "point",
+               shape = 23, size = 4, fill = "blue")+
+  coord_flip()+
+  labs(y = "SBP Reading in mmHg", x="n = 1124")+
+  theme_bw()
+
+v2 <- ggplot(training_2, aes(x = bpxsy1)) +
+  geom_histogram(bins = 15, col = "white", fill="purple")+
+  labs(x = "SBP Reading in mmHg")+
+  theme_bw()
+
+v3 <- ggplot(training_2, aes(sample = bpxsy1)) +
+  geom_qq(col = "blue") + geom_qq_line(col = "red")+
+  labs(y = "SBP Reading in mmHg")+
+  theme_bw()
+
+ v2 + v3-v1 +
+   plot_layout(ncol = 1, height = c(3, 2)) +
+  plot_annotation(title = "Original distribution of the first SBP Readings in the training_2 tibble",
+                  subtitle = "Blue diamond = Mean; Graphs are right-skewed")
+```
+
+Based on this initial visualization of the data outcome, we can see that the data is very right-skewed. We need to do transformation. 
+
+
+## Assessing Transformation using `boxCox` function
+
+```{r,echo=FALSE}
+model_temp <- lm(bpxsy1 ~ lbxvic + riagendr+ ridreth3+ whq030 + whq070,
+                 data = training_2)
+boxCox(model_temp)
+powerTransform(model_temp)
+```
+
+ The estimated transformation parameter is -1.14, which is close to -1. Thus, we will use inverse transformation for our data outcome.
+ 
+ 
+## Visualizing the Transformed Outcome
+
+```{r,echo=FALSE}
+training_2$inv_bpxsy1 <- 1/training_2$bpxsy1
+v1 <- ggplot(training_2, aes(x = "", y = inv_bpxsy1)) +
+  geom_violin(fill = "orange") +
+  geom_boxplot(width = 0.25, outlier.size = 2, fill ="yellow")+
+  stat_summary(fun = "mean", geom = "point",
+               shape = 23, size = 4, fill = "blue")+
+  coord_flip()+
+  labs(y = "SBP Reading in mmHg", x="n = 1124")+
+  theme_bw()
+
+v2 <- ggplot(training_2, aes(x = inv_bpxsy1)) +
+  geom_histogram(bins = 15, col = "white", fill="purple")+
+  labs(x = "SBP Reading in mmHg")+
+  theme_bw()
+
+v3 <- ggplot(training_2, aes(sample = inv_bpxsy1)) +
+  geom_qq(col = "blue") + geom_qq_line(col = "red")+
+  labs(y = "SBP Reading in mmHg")+
+  theme_bw()
+
+ v2 + v3-v1 +
+   plot_layout(ncol = 1, height = c(3, 2)) +
+  plot_annotation(title = "Inverse transformed distribution of the first SBP Readings in the training_2 tibble",
+                  subtitle = "Blue diamond = Mean; Graphs are much more normal")
+```
+
+Based on the plot results above, we can see the transformed outcome is much more normally-distributed. Thus, we will use inverse transformation for our analysis.
+
+- We created a new variable called `inv_bpxsy1` (inverse transformed bpxsy1). 
+
+
+## Numerical Summary of the Outcome
+
+We have provided the summary of our outcome variable `bpxsy1` (first systolic blood pressure) in both the original form and the inverse transformed form. For the original form, the minimum is 88, the median is 122, the mean is 122.3, and the maximum is 216. For the transformed form, the minimum is 0.0046, the median is 0.0082, the mean is 0.0083, and the maximum is 0.011. We have 799 subjects. 
+
+```{r}
+favstats(~ bpxsy1, data = training_2)
+favstats(~ 1/bpxsy1, data = training_2)
+```
+
+
+
+## Numerical Summaries of the Predictors
+
+We have provided the summary of our predictor variables: `lbxvic`, `riagendr`, `whq030`, `whq070`, and `ridreth3`. The mean and median for vitamin C level are 0.83 and 0.82, respectively. We have a total of 799 subjects.
+
+```{r,echo=FALSE}
+training_2 %>% select(-seqn, -bpxsy1) %>% 
+  mosaic::inspect()
+```
+
+
+
+
+## Scatterplot Matrix
+
+```{r}
+training_2 %>% 
+  select(riagendr,ridreth3,whq030,whq070,lbxvic,inv_bpxsy1) %>% 
+  ggpairs(., title = "Scatterplot Matrix",
+          lower = list(combo = wrap("facethist", bins = 15)))
+```
+
+## Scatterplot Matrix (Continued)
+
+- We have provided a scatterplot matrix here for some general analyses.
+- We should specifically look at the rightest column in the graph. 
+- The correlation between the inverse of our outcome variable and the key predictor is positive. This is surprising because as vitamin C level increases, systolic blood pressure level also increases. 
+- For the rest of the categorical predictors, it is hard for us to determine if there are any differences between each subgroup of the categorical predictors. However, from the graph, each subgroup appears to be similar to each other. 
+
+We think we had done enough for the visualization of the data. We will proceed to the next step. 
+
+
+## Collinearity Checking
+
+We have no other numeric candidate predictor other than our key predictor. Therefore, we do not think there are any problems with collinearity now. We will run a generalized VIF calculation in the later steps. 
+
+
+# The Big Model
+
+## How We Build Our Big Model
+
+- We will build the big model using all our predictor variables. 
+- We will use the inverse transformed outcome.  
+- We will use a 90% confidence level for the analysis. 
+
+## Fitting/Summarizing the Kitchen Sink model
+
+```{r}
+model_big <- lm(inv_bpxsy1 ~ lbxvic+riagendr+ridreth3+whq030+whq070,
+                data = training_2)
+summary(model_big)
+```
+
+## Fitting/Summarizing the Kitchen Sink model (Continued)
+
+Our big model predicts the inverse of `bpxsy1` using the predictors: `lbxvic`, `riagendr`, `whq030`, `whq070`, and `ridreth3`. We have provided a summary of our big model below. Based on the p-values, we can see that vitamin C level, sex (male), Non-Hispanic Black origin, Non-Hispanic Asian origin, and subjects who considered themselves overweight significantly predict first systolic blood pressure reading. 
+
+
+## Effect Sizes: Coefficient Estimates
+
+```{r,echo=FALSE}
+tidy(model_big, conf.int = TRUE, conf.level = 0.90) %>% 
+  select(term, estimate, std.error, conf.low, conf.high, p.value) %>% 
+  kable(dig = 6)
+```
+
+## Effect Sizes: Coefficient Estimates (Continued)
+
+
+- We used a 90% confidence level.
+- Again, based on the p-values, we can see that vitamin C level, sex (male), Non-Hispanic Black origin, Non-Hispanic Asian origin, and Subjects who considered themselves overweight significantly predict first systolic blood pressure reading.
+- The estimated coefficient of inverse transformed vitamin C level in predicting SBP reading is 0.000325. 
+- The estimated coefficient of being a male in predicting SBP reading is -0.000274. 
+- The estimated coefficient of being a Non-Hispanic Black in predicting SBP reading is -0.000467.
+- The estimated coefficient of being a Non-Hispanic Asian in predicting SBP reading is -0.000337.
+- The estimated coefficient of subjects who considered themselves overweight in predicting SBP reading is -0.000305.
+
+## Describing the Equation
+
+We have provided the equation for predicting our outcome variable using our predictors below. 
+
+```{r,results='asis'}
+extract_eq(model_big, use_coefs = TRUE, coef_digits = 6,
+           terms_per_line = 2, wrap = TRUE, ital_vars = TRUE)
+```
+
+
+## Describing the Equation (Continued)
+
+For this model, I will interpret all the variables that have p-value less than 0.1. 
+
+- For the key predictor, for every increase of one point in `lbxvic`, we expect an increase in the outcome or inverse of `bpxsy1` by 0.000325 (1/mmHg), with 90% confidence interval (0.000186, 0.000465).
+- When holding all other predictors constant, we can say that for every increase of one point in `riagendrMale`, we expect an decrease in the outcome or inverse of `bpxsy1` by 0.000273 (1/mmHg), with 90% confidence interval (-0.000395, -0.000152).
+- When holding all other predictors constant, we can say that for every increase of one point in `ridreth3Non−Hispanic Black`, we expect an decrease in the outcome or inverse of `bpxsy1` by 0.000467 (1/mmHg), with 90% confidence interval (-0.000642, -0.000293).
+- When holding all other predictors constant, we can say that for every increase of one point in `ridreth3Non−Hispanic Asian`, we expect an decrease in the outcome or inverse of `bpxsy1` by 0.000337 (1/mmHg), with 90% confidence interval (-0.000514, -0.000160).
+- When holding all other predictors constant, we can say that for every increase of one point in `whq030Overweight`, we expect an increase in the outcome or inverse of `bpxsy1` by 0.000305 (1/mmHg), with 90% confidence interval (-0.000439, -0.000171).
+
+
+# The Smaller Model
+
+## How We Built the Small Model
+
+- We will build a smaller model using a subset of our big model predictors, chosen to maximize predictive value within our training sample.
+- We will use the inverse transformed outcome.  
+- We will use a 90% confidence level for the analysis. 
+
+## Backwards Stepwise Elimination
+
+The backwards selection stepwise method suggests us to consider a model using predictors: `lbxvic`, `riagendr`, `ridreth3`, and `whq030`. 
+
+```{r}
+step(model_big)
+```
+
+
+
+## Fitting the “small” model
+
+We have provided a summary of our small model below. Based on the p-values, we can see that vitamin C level, sex (male), Non-Hispanic Black origin, Non-Hispanic Asian origin, and Subjects who considered themselves overweight significantly predict first systolic blood pressure reading. 
+
+```{r,echo=FALSE}
+model_small <- lm(formula = inv_bpxsy1 ~ lbxvic + riagendr + ridreth3 + whq030, data = training_2)
+summary(model_small)
+```
+
+
+
+## Effect Sizes: Coefficient Estimates
+
+
+```{r,echo=FALSE}
+tidy(model_small, conf.int = TRUE, conf.level = 0.90) %>% 
+  select(term, estimate, std.error, conf.low, conf.high, p.value) %>% 
+  kable(dig = 6)
+```
+
+
+## Effect Sizes: Coefficient Estimates (Continued)
+
+- We used a 90% confidence level.
+- Again, based on the p-values, we can see that vitamin C level, sex (male), Non-Hispanic Black origin, Non-Hispanic Asian origin, and Subjects who considered themselves overweight significantly predict first systolic blood pressure reading.
+- The estimated coefficient of inverse transformed vitamin C level in predicting SBP reading is 0.000328. 
+- The estimated coefficient of being a male in predicting SBP reading is -0.000277. 
+- The estimated coefficient of being a Non-Hispanic Black in predicting SBP reading is -0.000464.
+- The estimated coefficient of being a Non-Hispanic Asian in predicting SBP reading is -0.000334.
+- The estimated coefficient of subjects who considered themselves overweight in predicting SBP reading is -0.000293.
+
+
+## Small Model Regression Equation
+
+We have provided the equation for predicting our outcome variable using our predictors below.
+
+```{r,results='asis'}
+extract_eq(model_small, use_coefs = TRUE, coef_digits = 6,
+           terms_per_line = 2, wrap = TRUE, ital_vars = TRUE)
+```
+
+## Small Model Regression Equation (Continued)
+
+For the small model, I will also interpret all the variables that have p-value less than 0.1. 
+
+- For the key predictor, for every increase of one point in `lbxvic`, we expect an increase in the outcome or inverse of `bpxsy1` by 0.000328 (1/mmHg), with 90% confidence interval (0.000190, 0.000467).
+- When holding all other predictors constant, we can say that for every increase of one point in `riagendrMale`, we expect an decrease in the outcome or inverse of `bpxsy1` by 0.000277 (1/mmHg), with 90% confidence interval (-0.000397, -0.000157).
+- When holding all other predictors constant, we can say that for every increase of one point in `ridreth3Non−Hispanic Black`, we expect an decrease in the outcome or inverse of `bpxsy1` by 0.000464 (1/mmHg), with 90% confidence interval (-0.000639, -0.000290).
+- When holding all other predictors constant, we can say that for every increase of one point in `ridreth3Non−Hispanic Asian`, we expect an decrease in the outcome or inverse of `bpxsy1` by 0.000334 (1/mmHg), with 90% confidence interval (-0.000510, -0.000158).
+- When holding all other predictors constant, we can say that for every increase of one point in `whq030Overweight`, we expect an increase in the outcome or inverse of `bpxsy1` by 0.000293 (1/mmHg), with 90% confidence interval (-0.000418, -0.000168).
+
+
+# In-Sample Comparison
+
+## Quality of Fit
+
+We will compare the two models built from our training sample using adjusted R-squared, the residual standard error, AIC and BIC.
+
+```{r,echo=FALSE}
+temp_a <- glance(model_big) %>% 
+  select(-logLik, -deviance) %>%
+  round(digits = 3) %>%
+  mutate(modelname = "big")
+
+temp_b <- glance(model_small) %>%
+  select(-logLik, -deviance) %>%
+  round(digits = 3) %>%
+  mutate(modelname = "small")
+
+training_comp <- bind_rows(temp_a, temp_b) %>%
+  select(modelname, nobs, df, AIC, BIC, everything())
+training_comp %>% kable(digits=5)
+```
+
+
+
+
+## Quality of Fit(Continued)
+
+- The small model is better in terms of AIC and BIC because it has smaller values. 
+- The big model is slightly better in terms of R-squared value by 0.001 but the small model is slightly better in terms of adjusted R-squared value by 0.001. 
+- Overall, the small model with four predictors: `lbxvic`, `riagendr`, `ridreth3`, and `whq030`, performs slightly better in the training sample. 
+
+
+# Assessing Assumptions
+
+## Residual Plots for the Big Model
+
+```{r,echo=FALSE}
+par(mfrow = c(2,2)); plot(model_big); par(mfrow = c(1,1))
+```
+
+
+
+
+## Residual Plots for the Big Model (Continued)
+
+From the graphs we can conclude:
+
+
+- From the top left graph, we see no substantial problems assuming linearity of the transformed data. 
+- From the top right graph, we see no substantial problems assuming normality of the transformed data.
+- From the bottom left graph, we see no substantial problems assuming constant variance. 
+- From the bottom right graph, we see no highly leveraged points.
+
+
+## Residual Plots for the Small Model
+
+```{r}
+par(mfrow = c(2,2)); plot(model_small); par(mfrow = c(1,1))
+```
+
+
+
+
+## Residual Plots for the Small Model (Continued)
+
+Again, from the graphs we can conclude:
+- From the top left graph, we see no substantial problems assuming linearity of the transformed data. 
+- From the top right graph, we see no substantial problems assuming normality of the transformed data.
+- From the bottom left graph, we see no substantial problems assuming constant variance. 
+- From the bottom right graph, we see no highly leveraged points.
+
+We did not see any substantial problems in terms of assumptions for both models. 
+
+
+
+## Does collinearity have a meaningful impact?
+
+```{r}
+car::vif(model_big)
+```
+Since none of the generalized variance inflation factors is above 5, there is no two variables that are highly correlated with each other. Thus, we are not concerned about collinearity. 
+
+## Comparing the Models
+
+For the training sample, our small model performs slightly better in terms of adjusted R-squared, AIC, and BIC. Both models show no substantial problems with regression assumptions. 
+
+
+# Model Validation
+
+## Which Model?
+
+- We will use our two models: the big model and the small model, to predict the value of our outcome variable in the test sample, `test_2`. 
+
+# Calculating Prediction Errors
+## Big Model: Back-Transformation and Calculating Fits/Residuals
+
+- `.fitted` here tries to predict inverse of bpxsy1 instead of bpxsy1. Therefore, we inverse the `.fitted` value to back out of our inverse transformation. 
+- `bpxsy1_fit` is the estimated value using the big model for each subject in the test sample. 
+- `bpxsy1_res` is the prediction errors (observed bpxsy1 - estimated bpxsy1).
+
+```{r,echo=FALSE}
+aug_big <- augment(model_big, newdata = test_2) %>% 
+  mutate(mod_name = "big",
+         bpxsy1_fit = 1/(.fitted),
+         bpxsy1_res = bpxsy1 - bpxsy1_fit) %>%
+  select(seqn, mod_name, bpxsy1, bpxsy1_fit, bpxsy1_res, everything())
+
+head(aug_big,3)
+```
+
+## Small Model: Back-Transformation and Calculating Fits/Residuals
+
+We did the same method above again for the small model. 
+
+- `.fitted` here tries to predict inverse of bpxsy1 instead of bpxsy1. Therefore, we inverse the `.fitted` value to back out of our inverse transformation. 
+- `bpxsy1_fit` here is the estimated value using the small model for each subject in the test sample. 
+- `bpxsy1_res` is the prediction errors (observed bpxsy1 - estimated bpxsy1).
+
+
+```{r,echo=FALSE}
+aug_small <- augment(model_small, newdata = test_2) %>% 
+  mutate(mod_name = "small",
+         bpxsy1_fit = 1/(.fitted),
+         bpxsy1_res = bpxsy1 - bpxsy1_fit) %>%
+  select(seqn, mod_name, bpxsy1, bpxsy1_fit, bpxsy1_res, everything())
+
+head(aug_small,3)
+```
+
+
+
+## Combining the Results
+
+```{r}
+test_comp <- union(aug_big, aug_small) %>%
+  arrange(seqn, mod_name)
+
+test_comp %>% head()
+```
+
+- We created a new tibble called `test_comp`. This tibble includes all the predictions and prediction errors using both the big and small models on our test data. 
+- We will then visualize the predictions by both models and compare their prediction errors to see which model performs better. 
+
+
+## Visualizing the Predictions
+From the two plots, we can see that the two models are fairly similar to each other in terms of predictions and prediction errors.
+```{r,echo=FALSE}
+ggplot(test_comp, aes(x = bpxsy1_fit, y = bpxsy1)) +
+  geom_point(col="blue") +
+  geom_abline(slope = 1, intercept = 0, lty = "dashed", col="brown") + 
+  geom_smooth(method = "loess", col = "red", se = FALSE, formula = y ~ x) +
+  facet_wrap( ~ mod_name, labeller = "label_both") +
+  labs(x = "Predicted bpxsy1",
+       y = "Observed bpxsy1",
+       title = "Observed vs. Predicted bpxsy1",
+       subtitle = "Comparing Big to Small Model in Test Sample",
+       caption = "Dashed line is where Observed = Predicted")
+```
+
+ 
+
+
+
+## Summarizing the Errors
+
+- We have calculated the mean absolute prediction error (MAPE), the median absolute prediction error (medAPE), the maximum absolute prediction error (maxAPE), and the square root of the mean squared prediction error (RMSPE) for both models. 
+
+
+```{r,echo=FALSE}
+test_comp %>%
+  group_by(mod_name) %>%
+  summarise(n = n(),
+            MAPE = mean(abs(bpxsy1_res)),
+              medAPE = median(abs(bpxsy1_res)),
+              maxAPE = max(abs(bpxsy1_res)),
+              RMSPE = sqrt(mean(bpxsy1_res^2))) %>% kable(digits=5)
+```
+
+Both models suggest an average error in predicting systolic blood pressure (using MAPE) of more than 11.80 mm Hg.
+
+- In terms of MAPE and RMSPE, the small model performs slightly better.
+- In terms of medAPE and maxAPE, the big model performs slightly better. 
+- We think MAPE is more important than medAPE for blood pressure prediction. Therefore, overall, we think the small model performs slightly better than the big model. However, both models do not differ from each other a lot. 
+
+
+## Identify the largest errors
+
+The first systolic reading of the subject with respondent sequence number: 97054 was poorly fitted by both models. The 97054 subject is a Non-Hispanic White male who considered himself about the right weight and did not attempt to lose weight in the past year. 
+
+```{r}
+temp1 <- aug_big %>%
+  filter(abs(bpxsy1_res) == max(abs(bpxsy1_res)))
+
+temp2 <- aug_small %>%
+  filter(abs(bpxsy1_res) == max(abs(bpxsy1_res)))
+
+bind_rows(temp1, temp2)
+```
+
+
+
+
+## Validated R-squared values
+
+
+We calculated the R-squared values for both models, and the values do not vary a lot from each other. The big model has a slightly higher R-squared value, but this is possibly due to using more predictors. 
+
+```{r}
+aug_big %$% cor(bpxsy1, bpxsy1_fit)^2
+```
+
+```{r}
+aug_small %$% cor(bpxsy1, bpxsy1_fit)^2
+```
+
+
+## Comparing the Models
+
+In conclusion, we wanted to select the small model based on its performance on mean absolute prediction error,  square root of the mean squared prediction error, AIC, BIC, and adjusted R-squared value. 
+
+
+# Discussion 
+
+## Chosen Model
+
+Even though both models were similar, we chose the small model because of its performance on mean absolute prediction error,  square root of the mean squared prediction error, AIC, BIC, and adjusted R-squared value. 
+
+## Answering My Question 
+
+Vitamin C level, gender (male), subjects' consideration of their current weight (considered overweight), and race origin (Non-Hispanic Black and Non-Hispanic Asian) are all variables that can meaningfully and effectively predict the subjects' first systolic blood pressure readings in the `final_2` data. We were surprised by the association between SBP reading and vitamin C level because we anticipated that an increase in vitamin C level would decrease SBP level; however, our model showed that by holding other predictor variables constant, an increase in vitamin C level also increases SBP level. 
+
+
+## Next Steps
+
+One major limitation of our study was that we did not know if the association discovered was consistent over the years. We would want to do the same analysis in other years to see if we would get similar results. Additionally, even though there were no highly influential points in our data, we still had many outliers that could be removed from the data. This might affect findings in the study, but removing outliers would introduce bias into our study. A logical next step would be to categorize vitamin C levels into “low vitamin C level,” “optimal vitamin C level,” and “high vitamin C level” to fully understand the association between SBP levels and vitamin C levels. 
+
+
+## Reflection 
+
+If we knew how to do multiple imputations prior to completing study 2, we would have kept all the missing values and done imputations on them. This way we will have a larger sample size and potentially better understand the association between systolic blood pressure and vitamin C level. Additionally, we might want to treat outliers as missing values and do imputations on them as well. 
+
+
+

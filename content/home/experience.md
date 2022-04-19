@@ -22,29 +22,29 @@ date_format: Jan 2006
 #   Leave `date_end` empty if it's your current employer.
 #   Begin multi-line descriptions with YAML's `|2-` multi-line prefix.
 experience:
-  - title: Assistant Researcher
-    company: hinese Academy of Sciences 
-    company_url: ''
-    company_logo: 
-    location: Beijing
-    date_start: '2021-01-01'
-    date_end: ''
-    description: |2-
-        Responsibilities include:
-        
-        * Analysing
-        * Modelling
-        * Deploying
-        
-  - title: Researcher
-    company: CWRU
-    company_url: ''
-    company_logo: 
-    location: Cleveland, OH
-    date_start: '2021-11-25'
-    date_end: '2020-12-10'
-    description: Studied the life styles and high blood pressures
+
+ - title: Research Assistant 
+    company: Case Western Reserve Universtiy
+    location: Cleveland
+    date_start: '2022-04-26'
+    date_end: '2022-09-31'
+    description: dkfdjaljfda ....
+
+  - title: Research Assistant
+    company: Chinese Academy of Sciences
+    # company_url: 'https://augmedix.com/'
+    location: Beijing, China
+    date_start: '2020-10-15'
+    date_end: '2022-02-13'
+    description: Provided assistance with analyzing gene big data and reporting. Processed experiment data using computer technology and gene analytical techniques including SAS and R. Composed EI conference paper, and it is expected to be published in May, 2022.
+  
+  - title: Vice Presidence/Minister
+    company: School of Life Science and Engineering Press Center
+    location: Sichuan, China
+    date_start: '2016-09'
+    date_end: '2017-06'
+    description: Coordinated with others to plan departmental events to raise money for research and lab funding in the department. Assisted with activity organization and mainly took charge of external liaison. 
 
 design:
-  columns: '2'
+  columns: '5'
 ---
