@@ -9,8 +9,8 @@ authors:
 - Ying Liu
 - Tingting Wang
 
-date: "2022-05"
-doi: "
+date: "2022-05-01"
+doi:  "2022-05-02"
 
 # Schedule page publish date (NOT publication's date).
 publishDate: "2019-07-08T00:00:00Z"
@@ -22,8 +22,8 @@ publishDate: "2019-07-08T00:00:00Z"
 publication_types: ["2"]
 
 # Publication name and optional abbreviated publication name.
-publication: In *SpringerLink*
-publication_short: In *SpringerLink*
+publication: Coming Soon
+publication_short: coming soon
 
 abstract: In this paper, we detected using advanced big data technologies and scientific experiments the influence the ecDNA has on the HNSC and ESCA. More details to come. Stay tuned!
 

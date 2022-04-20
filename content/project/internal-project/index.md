@@ -1,6 +1,6 @@
 ---
 title: Chinese Academy of Sciences Gene Big Data Project
-summary: Using gene analytical techniques to analyze the influence of ecDNA's on HNSC and ESCA
+summary: Using big data analytical techniques on gene data to analyze the influence of ecDNA's on HNSC and ESCA
 tags:
   - R Language
 date: "2021-09-03T00:00:00Z"
