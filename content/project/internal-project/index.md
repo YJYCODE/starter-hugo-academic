@@ -1,5 +1,5 @@
 ---
-title: Chinese Academy of Sciences Gene Big Data Project
+title: The Influence of ecDNA on HNSC and ESCA
 summary: Using big data analytical techniques on gene data to analyze the influence of ecDNA's on HNSC and ESCA
 tags:
   - R Language
@@ -18,7 +18,7 @@ links:
     name: LinkedIn Page
     link: https://www.linkedin.com/in/j-yang-5b4a11214/
 
-url_code: https://blank.page/
+url_code: https://github.com/YJYCODE/HNSC
 url_paper: https://blank.page/
 # url_slides: https://blank.page/
 url_video: ""
@@ -31,4 +31,4 @@ url_video: ""
 slides: ""
 ---
 
-This is a project created using SAS and R language for my participation in the gene big data project. More contents to come. Stay tuned!
+This is a project created using SAS and R language for my participation in the gene big data project. Partical codes are saved in the github repo referred above.
