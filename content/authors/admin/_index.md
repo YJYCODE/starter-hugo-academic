@@ -54,7 +54,7 @@ social:
 # and uncomment the lines below.
 - icon: cv
   icon_pack: ai
-  link: uploads/resume.pdf
+  link: static/uploads/demo_resume.pdf
 
 # Enter email to display Gravatar (if Gravatar enabled in Config)
 email: "jxy965@case.edu"
