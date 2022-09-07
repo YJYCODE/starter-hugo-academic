@@ -16,7 +16,7 @@ organizations:
     url: https://www.gsu.edu/
 
 # Short bio (displayed in user profile at end of posts)
-bio: I am a student of Master in Biostatistics at the Case Western Reserve Universtiy, expecting to graduate in September 2022. My research interests include probability theories, ecDNA, and programmable matter. In my spare time, I am an all-time fan of soccer and supporter for Bayern Soccer Club.
+bio: I am a student of Master in Biostatistics at the Case Western Reserve Universtiy, expecting to graduate in December 2022. My research interests include probability theories, ecDNA, and programmable matter. In my spare time, I am an all-time fan of soccer and supporter for Bayern Soccer Club.
 
 # Interests to show in About widget
 interests:
@@ -63,6 +63,6 @@ email: "jxy965@case.edu"
 highlight_name: true
 ---
 
-I am a student of Master in Biostatistics at the Case Western Reserve Universtiy, expecting to graduate in September 2022. His research interests include probability theories, ecDNA, and programmable matter. In my spare time, I am an all-time fan of soccer and supporter for Bayern Soccer Club.
+I am a student of Master in Biostatistics at the Case Western Reserve Universtiy, expecting to graduate in December 2022. My research interests include probability theories, ecDNA, and programmable matter. In my spare time, I am an all-time fan of soccer and supporter for Bayern Soccer Club.
 
 {{< icon name="download" pack="fas" >}} Download my {{< staticref "uploads/demo_resume.pdf" "newtab" >}}CV{{< /staticref >}}.

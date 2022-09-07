@@ -28,7 +28,7 @@ experience:
     location: Cleveland
     date_start: '2022-04-26'
     date_end: '2022-09-30'
-    description: Provided assistance with documenting a clinical visit and cooperating with a physician to deliver the best service to a patient.
+    description: Provided assistance with researching the prognostic factors of hand dexterity in multiple sclerosis using R. Expected to submit for publish by October, 2022.       
         
   - title: Research Assistant
     company: Chinese Academy of Sciences
@@ -36,7 +36,7 @@ experience:
     location: Beijing, China
     date_start: '2020-10-15'
     date_end: '2022-02-13'
-    description: Provided assistance with analyzing gene big data and reporting. Processed experiment data using computer technology and gene analytical techniques including SAS and R. Composed EI conference paper, and it is expected to be published in May, 2022.
+    description: Provided assistance with analyzing gene big data and reporting. Processed experiment data using computer technology and gene analytical techniques including SAS and R. Composed EI conference paper, and it is published in April, 2022, on 2022 2nd International Conference on Medical Imaging Sanitation and Biological Pharmacy Part B.
 
   - title: Vice Presidence/Minister
     company: School of Life Science and Engineering Press Center
