@@ -31,4 +31,5 @@ url_video: ""
 slides: ""
 ---
 
-This is a project created using SAS and R language for my participation in the gene big data project. Partical codes are saved in the github repo referred above.
+This is a project created using SAS and R language for my participation in the gene big data project. Partical codes are saved in the github repo accessible by clicking the Github icon below.
+

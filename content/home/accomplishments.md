@@ -32,7 +32,7 @@ item:
     title: SAS Certified Associate - Programming Fundamentals Using SAS 9.4
     url: ""
 
-  - certificate_url: https://www.credly.com/earner/earned/badge/53923f62-6db1-4076-a572-11dfdac4bd23
+  - certificate_url: https://www.credly.com/badges/53923f62-6db1-4076-a572-11dfdac4bd23/public_url
     date_end: ""
     date_start: "2022-04-02"
     description: ""

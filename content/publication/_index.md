@@ -1,5 +1,5 @@
 ---
-title: "The influence of ecDNA on HNSC and ESCA"
+title: "The Influence of ecDNA on HNSC and ESCA"
 
 # Authors
 # If you created a profile for a user (e.g. the default `admin` user), write the username (folder name) here 
@@ -22,10 +22,10 @@ publishDate: "2019-07-08T00:00:00Z"
 publication_types: ["2"]
 
 # Publication name and optional abbreviated publication name.
-publication: Coming Soon
-publication_short: coming soon
+publication: 2022 2nd International Conference on Medical Imaging Sanitation and Biological Pharmacy Part B
+publication_short:
 
-abstract: In this paper, we detected using advanced big data technologies and scientific experiments the influence the ecDNA has on the HNSC and ESCA. More details to come. Stay tuned!
+abstract: In this paper, we detected using advanced big data technologies and scientific experiments the influence the ecDNA has on the HNSC and ESCA.
 
 # Summary. An optional shortened abstract.
 summary: 
